@@ -13,6 +13,12 @@ import java.io.FileInputStream;
 
 parser code {:
   protected Lexer lexer;
+  protected TreeNode root = null;
+
+	public TreeNode getRoot()
+  	{
+		return root;
+	}
 :}
 
 /* define how to connect to the scanner! */
@@ -31,17 +37,524 @@ init with {:
 scan with {: return lexer.next_token(); :};
 
 /* Terminals (tokens returned by the scanner). */
-terminal            SEMI, PLUS, MINUS, UMINUS, TIMES, LPAREN, RPAREN;
+terminal INT, BOOL, VOID, TRUE, FALSE, IF, ELSE, WHILE, RETURN, CIN, COUT;
+terminal LBRACE, RBRACE, LPAREN, RPAREN, LBRACKET, RBRACKET;
+terminal COMMA, SEMI, EQUAL, PLUS, MINUS,UMINUS, TIMES, DIVIDE, NOT, ANDAND, OROR;
+terminal EQEQ, NOTEQ, LESS, GREATER, LESSEQ, GREATEREQ;
+terminal LTLT, GTGT; 
+terminal String ID;  
+terminal READ, WRITE;
+terminal String STRINGLITERAL;
+terminal Integer INTLITERAL;
 terminal Integer    NUMBER;        // our scanner provides numbers as integers
 
 /* Non terminals */
-non terminal            expr_list;
+non terminal TreeNode           expr_list;
 non terminal Integer    expr;      // used to store evaluated subexpressions
+non terminal TreeNode           program, varDecl, fnDecl, type;
+non terminal TreeNode			parameters, formalsList, formalDecl, block, declList,stmtList, stmt;
+non terminal TreeNode			exp, atom, fnCallExpr, fnCallStmt, actualList, subscriptExpr;
+non terminal TreeNode			id;
 
 /* Precedences */
 precedence left PLUS, MINUS;
-precedence left TIMES;
-precedence left UMINUS;
+precedence left TIMES, DIVIDE;
+precedence left UMINUS, NOT;
+precedence left OROR, ANDAND;
+ 
+program ::= program:p varDecl:v
+    {: 
+        System.out.println("Found: program -> program varDecl");
+         p.addChild(v);
+				 RESULT = p;
+    :}
+    | program:p fnDecl:fd
+    {: 
+        System.out.println("Found: program -> program fnDecl");
+        p.addChild(fd);
+		RESULT = p;
+
+    :}
+    | /* empty */
+    {: 
+        System.out.println("Found: program -> epsilon");
+        TreeNode node = new TreeNode("program");
+		root = node;
+		RESULT = node;
+
+    :}
+    ;
+
+varDecl ::= type:t id:i SEMI
+    {: 
+        System.out.println("Found: varDecl -> type id SEMI");
+        TreeNode node = new TreeNode("varDecl");
+        node.addChild(t);
+        node.addChild(i);        
+        RESULT = node; // Actualizeaza nodul curent
+    :}
+
+    | type:t id:i LBRACKET INTLITERAL:arraySize RBRACKET SEMI
+    {: 
+        System.out.println("Found: varDecl -> type id LBRACKET INTLITERAL RBRACKET SEMI");
+        TreeNode node = new TreeNode("varDecl -> type id LBRACKET INTLITERAL RBRACKET SEMI");
+        t.addChild(i); 
+		t.addChild(new TreeNode(""+arraySize));
+        RESULT = t; // Actualizeaza nodul curent
+    :}
+    ;
+
+type ::= INT   
+    {: 
+        System.out.println("Found: type -> INT");
+        TreeNode node = new TreeNode("type -> INT");
+        RESULT = node; 
+    :}
+    | BOOL         
+    {: 
+        System.out.println("Found: type -> BOOL");
+        TreeNode node = new TreeNode("type -> BOOL");
+        RESULT = node; 
+    :}
+    | VOID         
+    {: 
+        System.out.println("Found: type -> VOID");
+        TreeNode node = new TreeNode("type -> VOID");
+        RESULT = node; // Actualizeaza nodul curent
+    :}
+    ;
+
+fnDecl ::= type:t id:i parameters:p block:b
+    {: 
+        System.out.println("Found: fnDecl -> type id parameters block");
+        TreeNode node = new TreeNode("fnDecl");
+        node.addChild(t);
+        node.addChild(i);
+        node.addChild(p);
+        node.addChild(b);
+        RESULT = node;  // Actualizeaza nodul curent
+    :}
+    ;
+
+parameters ::= LPAREN RPAREN 
+    {: 
+        System.out.println("Found: parameters -> LPAREN RPAREN");
+        TreeNode node = new TreeNode("parameters");
+        RESULT = node; // Actualizeaza nodul curent
+    :}
+    | LPAREN formalsList:f RPAREN
+    {: 
+        System.out.println("Found: parameters -> LPAREN formalsList RPAREN");
+        TreeNode node = new TreeNode("parameters -> LPAREN formalsList RPAREN");
+        node.addChild(f); // formalsList
+        RESULT = node; // Actualizeaza nodul curent
+    :}
+    ;
+
+formalsList ::= formalDecl:f 
+    {: 
+        System.out.println("Found: formalsList -> formalDecl");
+        TreeNode node = new TreeNode("formalsList");
+        node.addChild(f); // formalDecl
+        RESULT = node; // Actualizeaza nodul curent
+    :}
+    | formalsList:fl COMMA formalDecl:f 
+    {: 
+        System.out.println("Found: formalsList -> formalsList COMMA formalDecl");
+        fl.addChild(f); 
+        RESULT = fl; // Actualizeaza nodul curent
+    :}
+    ;
+
+formalDecl ::= type:t id:i
+    {: 
+        System.out.println("Found: formalDecl -> type id");
+         TreeNode node = new TreeNode("formalDecl");
+         node.addChild(t);
+         node.addChild(i);
+         RESULT = node; // Actualizeaza nodul curent
+    :}
+    ;
+
+block ::= LBRACE declList:dl stmtList:sl RBRACE
+    {: 
+        System.out.println("Found: block -> LBRACE declList stmtList RBRACE");
+        TreeNode node = new TreeNode("block");
+        node.addChild(dl);
+        node.addChild(sl);
+        RESULT = node;
+    :}
+    ;
+  
+ declList ::= declList:dl varDecl:vd
+    {: 
+        System.out.println("Found: declList -> declList varDecl");
+        dl.addChild(vd); 
+        RESULT = dl;
+    :}
+    | /* empty */
+    {: 
+        System.out.println("Found: declList -> epsilon");
+        TreeNode node = new TreeNode("declList -> epsilon");
+        RESULT = node;
+    :}
+  ;
+  
+
+stmtList ::= stmtList:sl stmt:s
+    {: 
+        System.out.println("Found: stmtList -> stmtList stmt");
+        sl.addChild(s);
+        RESULT = sl; // Actualizeaza nodul
+    :}
+    | /* empty */ 
+    {: 
+        System.out.println("Found: stmtList -> epsilon");
+        TreeNode node = new TreeNode("stmtList -> epsilon");
+        RESULT = node;
+    :} 
+    ;
+
+stmt ::= CIN READ id:i SEMI 
+    {: 
+        System.out.println("Found: stmt -> CIN READ id SEMI");
+        TreeNode node = new TreeNode("stmt -> CIN READ id SEMI");
+        node.addChild(i);  
+        RESULT = node;
+    :}
+    | CIN READ id:i LBRACKET exp:e RBRACKET SEMI 
+    {: 
+        System.out.println("Found: stmt -> CIN READ id LBRACKET exp RBRACKET SEMI");
+      TreeNode node = new TreeNode("CIN READ Stmt");
+      node.addChild(i);
+	  node.addChild(e);
+      RESULT = node;
+
+    :}
+    | COUT WRITE exp:e SEMI
+    {: 
+        System.out.println("Found: stmt -> COUT WRITE exp SEMI");
+        TreeNode node = new TreeNode("COUT WRITE Stmt");
+        node.addChild(e); 
+        RESULT = node;
+    :}
+    | subscriptExpr:se EQUAL exp:e SEMI
+    {: 
+        System.out.println("Found: stmt -> subscriptExpr EQUAL exp SEMI");
+        TreeNode node = new TreeNode("subscriptExpr");
+		node.addChild(se);
+		node.addChild(e);
+		RESULT = node;
+    :}
+    | id:i EQUAL exp:e SEMI 
+    {: 
+        System.out.println("Found: stmt -> id EQUAL exp SEMI");
+        TreeNode node = new TreeNode("EQUAL Stmt");
+        node.addChild(new TreeNode(i.toString()));
+        node.addChild(e);
+        RESULT = node;
+    :}
+    | IF LPAREN exp:e RPAREN block:b
+    {: 
+        System.out.println("Found: stmt -> IF LPAREN exp RPAREN block");
+         TreeNode node = new TreeNode("IF Stmt");
+                  node.addChild(e); 
+                  node.addChild(b);  
+                  RESULT = node; 
+
+    :}
+    | IF LPAREN exp:e RPAREN block:b ELSE block:b1
+    {: 
+        System.out.println("Found: stmt -> IF LPAREN exp RPAREN block ELSE block");
+       TreeNode node = new TreeNode("ifStmt");
+                  node.addChild(e);  
+                  node.addChild(b);  
+                  node.addChild(b1);
+                  RESULT = node;
+    :}
+    | WHILE LPAREN exp:e RPAREN block:b
+    {: 
+        System.out.println("Found: stmt -> WHILE LPAREN exp RPAREN block");
+        TreeNode node = new TreeNode("WHILE Stmt");
+                  node.addChild(e);  
+                  node.addChild(b);  
+                  RESULT = node;
+    :}
+    | RETURN exp:e SEMI
+    {: 
+        System.out.println("Found: stmt -> RETURN exp SEMI");
+       TreeNode node = new TreeNode("stmt -> return");
+                  node.addChild(e);   
+                  RESULT = node;
+    :}
+    | RETURN SEMI
+    {: 
+        System.out.println("Found: stmt -> RETURN SEMI");
+       TreeNode node = new TreeNode("return Stmt");
+                 RESULT = node;
+
+    :}
+    | fnCallStmt:fc SEMI
+    {: 
+        System.out.println("Found: stmt -> fnCallStmt SEMI");
+         TreeNode node = new TreeNode("fnCallStmt");
+				 node.addChild(fc);
+                 RESULT = node;
+    :}
+    ;
+
+exp ::= exp:e1 PLUS exp:e2
+    {: 
+        System.out.println("Found: exp -> exp PLUS exp");
+         TreeNode node = new TreeNode("PLUS");
+				 node.addChild(e1);
+				 node.addChild(e2);
+                 RESULT = node;
+
+    :}
+    | exp:e1 MINUS exp:e2  
+    {: 
+        System.out.println("Found: exp -> exp MINUS exp");
+        TreeNode node = new TreeNode("MINUS");
+				 node.addChild(e1);
+				 node.addChild(e2);
+                 RESULT = node;
+
+    :}
+    | exp:e1 TIMES exp:e2 
+    {: 
+        System.out.println("Found: exp -> exp TIMES exp");
+        TreeNode node = new TreeNode("TIMES");
+				 node.addChild(e1);
+				 node.addChild(e2);
+                 RESULT = node;	
+
+    :} 
+    | exp:e1 DIVIDE exp:e2
+    {: 
+        System.out.println("Found: exp -> exp DIVIDE exp");
+        TreeNode node = new TreeNode("DIVIDE");
+				 node.addChild(e1);
+				 node.addChild(e2);
+                 RESULT = node;
+    :}  
+    | NOT exp:e
+    {: 
+        System.out.println("Found: exp -> NOT exp");
+        TreeNode node = new TreeNode("NOT");
+				 node.addChild(e);
+                 RESULT = node;
+
+    :}
+    | exp:e1 ANDAND exp:e2  
+    {: 
+        System.out.println("Found: exp -> exp ANDAND exp");
+       TreeNode node = new TreeNode("ANDAND");
+				 node.addChild(e1);
+				 node.addChild(e2);
+                 RESULT = node; 
+
+    :}
+    | exp:e1 OROR exp:e2 
+    {: 
+        System.out.println("Found: exp -> exp OROR exp");
+        TreeNode node = new TreeNode("OROR");
+				 node.addChild(e1);
+				 node.addChild(e2);
+                 RESULT = node;
+    :} 
+    | exp:e1 EQEQ exp:e2  
+    {: 
+        System.out.println("Found: exp -> exp EQEQ exp");
+        TreeNode node = new TreeNode("EQEQ");
+				 node.addChild(e1);
+				 node.addChild(e2);
+                 RESULT = node;
+    :}
+    | exp:e1 NOTEQ exp:e2  
+    {: 
+        System.out.println("Found: exp -> exp NOTEQ exp");
+        TreeNode node = new TreeNode("NOTEQ");
+				 node.addChild(e1);
+				 node.addChild(e2);
+                 RESULT = node; 
+    :}
+    | exp:e1 LESS exp:e2  
+    {: 
+        System.out.println("Found: exp -> exp LESS exp");
+        TreeNode node = new TreeNode("LESS");
+				 node.addChild(e1);
+				 node.addChild(e2);
+                 RESULT = node; 
+    :}
+    | exp:e1 GREATER exp:e2  
+    {: 
+        System.out.println("Found: exp -> exp GREATER exp");
+        TreeNode node = new TreeNode("GREATER");
+				 node.addChild(e1);
+				 node.addChild(e2);
+                 RESULT = node; 
+    :}
+    | exp:e1 LESSEQ exp:e2  
+    {: 
+        System.out.println("Found: exp -> exp LESSEQ exp");
+         TreeNode node = new TreeNode("LESSEQ");
+				 node.addChild(e1);
+				 node.addChild(e2);
+                 RESULT = node;
+    :}
+    | exp:e1 GREATEREQ exp:e2  
+    {: 
+        System.out.println("Found: exp -> exp GREATEREQ exp");
+        TreeNode node = new TreeNode("GRATEREQ");
+				 node.addChild(e1);
+				 node.addChild(e2);
+                 RESULT = node;
+    :}
+
+| MINUS atom:a
+  {: 
+    System.out.println("Found: exp -> MINUS atom");
+  TreeNode node = new TreeNode("MINUS atom");
+				 node.addChild(a);
+                 RESULT = node; 
+  :}
+| atom:a
+    {: 
+        System.out.println("Found: exp -> atom");
+        TreeNode node = new TreeNode("atom");
+				 node.addChild(a);
+                 RESULT = node;
+    :} 
+;
+  
+  atom ::= INTLITERAL:intLit
+    {: 
+       System.out.println("Found: atom -> INTLITERAL");
+       TreeNode node = new TreeNode("INTLITERAL");
+       node.addChild(new TreeNode(""+intLit));
+       RESULT = node;
+    :}
+    | STRINGLITERAL:stringLit
+    {: 
+        System.out.println("Found: atom -> STRINGLITERAL");
+         TreeNode node = new TreeNode("STRINGLITERAL");
+         node.addChild(new TreeNode(stringLit));
+         RESULT = node;
+    :}
+    | TRUE
+    {: 
+        System.out.println("Found: atom -> TRUE");
+        TreeNode node = new TreeNode("TRUE");
+        RESULT = node;
+    :}
+    | FALSE
+    {: 
+        System.out.println("Found: atom -> FALSE");
+        TreeNode node = new TreeNode("FALSE");
+        RESULT = node;
+    :}
+    | LPAREN exp:e RPAREN
+    {: 
+        System.out.println("Found: atom -> LPAREN exp RPAREN");
+       TreeNode node = new TreeNode("LPAREN RPAREN");
+       node.addChild(e);
+       RESULT = node;
+    :}
+    | fnCallExpr:fc
+    {: 
+        System.out.println("Found: atom -> fnCallExpr");
+        TreeNode node = new TreeNode("fnCallExpr");
+                  node.addChild(fc);
+                  RESULT = node;
+    :}
+    | subscriptExpr:se
+    {: 
+        System.out.println("Found: atom -> subscriptExpr");
+        TreeNode node = new TreeNode("subscriptExpr");
+                  node.addChild(se);
+                  RESULT = node;
+    :}
+    | id:i
+    {: 
+        System.out.println("Found: atom -> id");
+         TreeNode node = new TreeNode("atom");
+         node.addChild(i);
+         RESULT = node;
+    :}
+    ;
+
+fnCallExpr ::= id:i LPAREN RPAREN
+    {: 
+        System.out.println("Found: fnCallExpr -> id LPAREN RPAREN");
+        TreeNode node = new TreeNode("fnCallExpr id");
+                  node.addChild(i);
+                  RESULT = node;
+    :}
+    | id:i LPAREN actualList:al RPAREN
+    {: 
+        System.out.println("Found: fnCallExpr -> id LPAREN actualList RPAREN");
+         TreeNode node = new TreeNode("fnCallExpr -> id actualList");
+                  node.addChild(i);
+				  node.addChild(al);
+                  RESULT = node;
+    :}
+    ;
+
+fnCallStmt ::= id:i LPAREN RPAREN
+    {: 
+        System.out.println("Found: fnCallStmt -> id LPAREN RPAREN");
+        TreeNode node = new TreeNode("fnCallStmt id");
+                  node.addChild(i);
+                  RESULT = node; 
+    :}
+    | id:i LPAREN actualList:al RPAREN
+    {: 
+        System.out.println("Found: fnCallStmt -> id LPAREN actualList RPAREN");
+        TreeNode node = new TreeNode("fnCallExp -> id actualList");
+                  node.addChild(i);
+				  node.addChild(al);
+                  RESULT = node;
+    :}
+    ;
+
+actualList ::= exp:e
+    {: 
+        System.out.println("Found: actualList -> exp");
+       TreeNode node = new TreeNode("actualList");
+                  node.addChild(e);
+                  RESULT = node;
+    :}
+    | actualList:al COMMA exp:e
+    {: 
+        System.out.println("Found: actualList -> actualList COMMA exp");
+                  al.addChild(e);
+                  RESULT = al;
+    :}
+    ;
+
+subscriptExpr ::= id:i LBRACKET exp:e RBRACKET
+    {: 
+        System.out.println("Found: subscriptExpr -> id LBRACKET exp RBRACKET");
+        TreeNode node = new TreeNode("subscriptExpr");
+                  node.addChild(i);
+				  node.addChild(e);
+                  RESULT = node;
+    :}
+    ;
+
+id ::= ID:i
+    {: 
+        System.out.println("Found: id -> ID");
+         TreeNode node = new TreeNode("ID");
+          node.addChild(new TreeNode(i)); 
+          RESULT = node;
+    :}
+    ;
+  
+  
+  
+		
 
 /* The grammar rules */
 expr_list ::= expr_list expr:e SEMI         {: System.out.println(e); :}

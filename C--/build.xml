@@ -16,7 +16,8 @@
 	          parser="Parser"
 			  interface="true"
 	  	      locations="true"
-	          debugsymbols="true" />
+	          debugsymbols="true" 
+	    	  expect="100" />
 	  	<jflex  file="lexer.jflex" destdir="${java}" />
 	  </target>
 

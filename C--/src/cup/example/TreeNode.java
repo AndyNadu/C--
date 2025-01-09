@@ -1,0 +1,30 @@
+package cup.example;
+
+import java.util.ArrayList;
+
+public class TreeNode
+{
+	private String nodeInfo;
+    private ArrayList<TreeNode> children = new ArrayList<TreeNode>();
+
+    public TreeNode(String nodeInfo)
+    {
+    	this.nodeInfo = nodeInfo;
+    }
+
+    public String getNodeInfo()
+    {
+    	return nodeInfo;
+    }
+
+    public void addChild(TreeNode child)
+    {
+    	children.add(child);
+    }  
+
+    public TreeNode[] getChildren()
+    {
+    	TreeNode [] list = new TreeNode[children.size()];
+        return children.toArray(list);
+    }
+}

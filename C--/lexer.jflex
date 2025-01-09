@@ -57,6 +57,8 @@ import java.io.InputStreamReader;
 Newline    = \r | \n | \r\n
 Whitespace = [ \t\f] | {Newline}
 Number     = [0-9]+
+ID         = [a-zA-Z_][a-zA-Z0-9_]*
+String	   = \"([^\"\\n])*\"
 
 /* comments */
 Comment = {TraditionalComment} | {EndOfLineComment}
@@ -76,16 +78,50 @@ ident = ([:jletter:] | "_" ) ([:jletterdigit:] | [:jletter:] | "_" )*
 %%  
 
 <YYINITIAL> {
-
+ {EndOfLineComment} { }
   {Whitespace} {                              }
-  ";"          { return symbolFactory.newSymbol("SEMI", SEMI); }
-  "+"          { return symbolFactory.newSymbol("PLUS", PLUS); }
-  "-"          { return symbolFactory.newSymbol("MINUS", MINUS); }
-  "*"          { return symbolFactory.newSymbol("TIMES", TIMES); }
-  "n"          { return symbolFactory.newSymbol("UMINUS", UMINUS); }
-  "("          { return symbolFactory.newSymbol("LPAREN", LPAREN); }
-  ")"          { return symbolFactory.newSymbol("RPAREN", RPAREN); }
-  {Number}     { return symbolFactory.newSymbol("NUMBER", NUMBER, Integer.parseInt(yytext())); }
+ 
+  "int"             { return symbolFactory.newSymbol("INT", INT); }
+  "bool"            { return symbolFactory.newSymbol("BOOL", BOOL); }
+  "void"            { return symbolFactory.newSymbol("VOID", VOID); }
+  "true"            { return symbolFactory.newSymbol("TRUE", TRUE); }
+  "false"           { return symbolFactory.newSymbol("FALSE", FALSE); }
+  "if"              { return symbolFactory.newSymbol("IF", IF); }
+  "else"            { return symbolFactory.newSymbol("ELSE", ELSE); }
+  "while"           { return symbolFactory.newSymbol("WHILE", WHILE); }
+  "return"          { return symbolFactory.newSymbol("RETURN", RETURN); }
+  "cin"             { return symbolFactory.newSymbol("CIN", CIN); }
+  "cout"            { return symbolFactory.newSymbol("COUT", COUT); }
+  
+  "{"          		{ return symbolFactory.newSymbol("LBRACE", LBRACE); }
+  "}"          		{ return symbolFactory.newSymbol("RBRACE", RBRACE); }
+  "("          		{ return symbolFactory.newSymbol("LPAREN", LPAREN); }
+  ")"               { return symbolFactory.newSymbol("RPAREN", RPAREN); }
+  "["               { return symbolFactory.newSymbol("LBRACKET", LBRACKET); }
+  "]"               { return symbolFactory.newSymbol("RBRACKET", RBRACKET); }
+  ","               { return symbolFactory.newSymbol("COMMA", COMMA); }
+  ";"               { return symbolFactory.newSymbol("SEMI", SEMI); }
+  "="               { return symbolFactory.newSymbol("EQUAL", EQUAL); }
+  "+"               { return symbolFactory.newSymbol("PLUS", PLUS); }
+  "-"               { return symbolFactory.newSymbol("MINUS", MINUS); }
+  "*"               { return symbolFactory.newSymbol("TIMES", TIMES); }
+  "/"               { return symbolFactory.newSymbol("DIVIDE", DIVIDE); }
+  "!"               { return symbolFactory.newSymbol("NOT", NOT); }
+  "&&"              { return symbolFactory.newSymbol("ANDAND", ANDAND); }
+  "||"              { return symbolFactory.newSymbol("OROR", OROR); }
+  "=="              { return symbolFactory.newSymbol("EQEQ", EQEQ); }
+  "!="              { return symbolFactory.newSymbol("NOTEQ", NOTEQ); }
+  "<"               { return symbolFactory.newSymbol("LESS", LESS); }
+  ">"               { return symbolFactory.newSymbol("GREATER", GREATER); }
+  "<="              { return symbolFactory.newSymbol("LESSEQ", LESSEQ); }
+  ">="              { return symbolFactory.newSymbol("GREATEREQ", GREATEREQ); }
+  "<<"             { return symbolFactory.newSymbol("LTLT", LTLT); }
+  ">>"             { return symbolFactory.newSymbol("GTGT", GTGT); }
+ 
+  
+  {ID}           { return symbolFactory.newSymbol("ID", ID, yytext()); }
+  {String}      { return symbolFactory.newSymbol("STRINGLITERAL", STRINGLITERAL, yytext()); }
+  {Number}     { return symbolFactory.newSymbol("INTLITERAL", INTLITERAL, Integer.parseInt(yytext())); }
 }
 
 

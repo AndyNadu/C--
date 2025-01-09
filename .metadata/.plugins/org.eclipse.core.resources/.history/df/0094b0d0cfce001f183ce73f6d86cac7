@@ -1,0 +1,13 @@
+int n;
+int s;
+int p;
+// Ordinary recursion
+int sp1(int n) {
+int s;
+if ( n == 1) {
+return 1;
+} else {
+s = sp1(n-1);
+return s+n;
+}
+}
